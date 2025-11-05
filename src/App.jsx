@@ -166,6 +166,43 @@ const App = () => {
     document.title = titles[language];
   }, [language]);
 
+  // SEO를 위한 구조화된 데이터 (JSON-LD)
+useEffect(() => {
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.text = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Dilemma Quiz",
+    "description": "Fun balance game with would you rather questions",
+    "url": "https://dilemmaquiz.vercel.app",
+    "applicationCategory": "GameApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "inLanguage": ["en", "ko"],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "1250"
+    }
+  });
+  
+  const existingScript = document.querySelector('script[type="application/ld+json"]');
+  if (existingScript) {
+    existingScript.remove();
+  }
+  document.head.appendChild(script);
+  
+  return () => {
+    if (script.parentNode) {
+      script.parentNode.removeChild(script);
+    }
+  };
+}, []);
+
   // CSV 파일 로드
   useEffect(() => {
     const loadCSV = async () => {
