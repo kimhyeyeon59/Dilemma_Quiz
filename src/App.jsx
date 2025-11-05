@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, Share, ChevronRight, Sparkles, Globe, ThumbsUp } from 'lucide-react';
 import Papa from 'papaparse';
-import { Analytics } from "@vercel/analytics/react"
 
 // Noto Sans KR + Inter 폰트 로드
 if (typeof document !== 'undefined') {
@@ -160,94 +159,77 @@ const App = () => {
   // 언어에 따라 브라우저 탭 제목 변경
   useEffect(() => {
     const titles = {
-      en: 'Dilemma Quiz',
-      ko: '딜레마 퀴즈'
+      en: 'Dilemma Quiz - Balance Game',
+      ko: '딜레마 퀴즈 - 밸런스 게임'
     };
     document.title = titles[language];
   }, [language]);
 
   // SEO를 위한 구조화된 데이터 (JSON-LD)
-useEffect(() => {
-  const script = document.createElement('script');
-  script.type = 'application/ld+json';
-  script.text = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Dilemma Quiz",
-    "description": "Fun balance game with would you rather questions",
-    "url": "https://dilemmaquiz.vercel.app",
-    "applicationCategory": "GameApplication",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "inLanguage": ["en", "ko"],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "1250"
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Dilemma Quiz",
+      "description": "Fun balance game with would you rather questions",
+      "url": "https://dilemmaquiz.vercel.app",
+      "applicationCategory": "GameApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "inLanguage": ["en", "ko"],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250"
+      }
+    });
+    
+    const existingScript = document.querySelector('script[type="application/ld+json"]');
+    if (existingScript) {
+      existingScript.remove();
     }
-  });
-  
-  const existingScript = document.querySelector('script[type="application/ld+json"]');
-  if (existingScript) {
-    existingScript.remove();
-  }
-  document.head.appendChild(script);
-  
-  return () => {
-    if (script.parentNode) {
-      script.parentNode.removeChild(script);
-    }
-  };
-}, []);
+    document.head.appendChild(script);
+    
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
 
   // CSV 파일 로드
   useEffect(() => {
     const loadCSV = async () => {
       try {
-        console.log('📂 CSV 파일 로딩 시도...');
         const response = await fetch('/questions.csv');
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response ok:', response.ok);
         
         if (!response.ok) {
           throw new Error(`CSV file not found - Status: ${response.status}`);
         }
         
         const csvText = await response.text();
-        console.log('📄 CSV 텍스트 길이:', csvText.length);
-        console.log('📄 CSV 첫 200자:', csvText.substring(0, 200));
         
         Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
           complete: (results) => {
-            console.log('📊 파싱된 데이터 개수:', results.data.length);
-            console.log('📊 첫 3개 데이터:', results.data.slice(0, 3));
-            console.log('📊 헤더:', results.meta.fields);
-            
             const db = {};
             
-            results.data.forEach((row, index) => {
+            results.data.forEach((row) => {
               const category = row.category?.trim().toLowerCase();
-              
-              if (index < 5) {
-                console.log(`행 ${index}: category="${category}"`, row);
-              }
               
               // 유효한 카테고리인지 체크
               if (!category || !['romance', 'workschool'].includes(category)) {
-                if (category) {
-                  console.warn(`⚠️ Unknown category at row ${index}:`, category);
-                }
                 return;
               }
               
               // 질문 데이터 검증
               if (!row.question_en || !row.option_a_en || !row.option_b_en) {
-                console.warn(`⚠️ Incomplete data at row ${index}:`, row);
                 return;
               }
               
@@ -270,23 +252,18 @@ useEffect(() => {
               });
             });
             
-            console.log('✅ 최종 DB:', Object.keys(db).map(k => `${k}: ${db[k].length}개`));
-            
             if (Object.keys(db).length > 0) {
               setQuestionDB(db);
-              console.log('✅ CSV 로드 완료!');
-            } else {
-              console.warn('⚠️ CSV에서 데이터를 찾을 수 없습니다. 기본값 사용');
             }
             setIsLoadingCSV(false);
           },
           error: (error) => {
-            console.error('❌ CSV 파싱 에러:', error);
+            console.error('CSV loading failed:', error);
             setIsLoadingCSV(false);
           }
         });
       } catch (error) {
-        console.error('❌ CSV 파일 로드 실패:', error);
+        console.error('CSV loading failed:', error);
         setIsLoadingCSV(false);
       }
     };
