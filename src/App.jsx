@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, Share, ChevronRight, Sparkles, Globe, ThumbsUp } from 'lucide-react';
 import Papa from 'papaparse';
+import { Analytics } from "@vercel/analytics/react"
 
 // Noto Sans KR + Inter 폰트 로드
 if (typeof document !== 'undefined') {
@@ -156,6 +157,15 @@ const App = () => {
     { id: 'workschool', emoji: '💼' }
   ];
 
+  // 언어에 따라 브라우저 탭 제목 변경
+  useEffect(() => {
+    const titles = {
+      en: 'Dilemma Quiz',
+      ko: '딜레마 퀴즈'
+    };
+    document.title = titles[language];
+  }, [language]);
+
   // CSV 파일 로드
   useEffect(() => {
     const loadCSV = async () => {
@@ -269,18 +279,8 @@ const App = () => {
   const startQuiz = () => {
     const categoryQuestions = questionDB[selectedCategory] || [];
     
-    // 언어에 맞게 질문 변환
-    const languageQuestions = categoryQuestions.map(item => {
-      const langData = item[language] || item.en; // 언어 데이터가 없으면 영어 사용
-      return {
-        q: langData.q,
-        a: langData.a,
-        b: langData.b,
-        id: item.id
-      };
-    });
-    
-    const shuffled = [...languageQuestions].sort(() => Math.random() - 0.5);
+    // 원본 데이터 그대로 저장 (언어별 변환 제거)
+    const shuffled = [...categoryQuestions].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(questionCount, shuffled.length));
     setQuestions(selected);
     setAnswers([]);
@@ -535,7 +535,16 @@ const App = () => {
   }
 
   if (stage === 'quiz') {
-    const q = questions[currentQuestion];
+    const currentQuestionData = questions[currentQuestion];
+    
+    // 현재 언어에 맞는 질문 데이터 동적으로 가져오기
+    const q = {
+      q: currentQuestionData[language]?.q || currentQuestionData.en?.q || '',
+      a: currentQuestionData[language]?.a || currentQuestionData.en?.a || '',
+      b: currentQuestionData[language]?.b || currentQuestionData.en?.b || '',
+      id: currentQuestionData.id
+    };
+    
     const progress = ((currentQuestion + 1) / questions.length) * 100;
     let questionComments = (comments[q.id] || []);
     
